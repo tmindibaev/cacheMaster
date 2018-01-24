@@ -1,52 +1,147 @@
 package cache;
 
-import java.io.Serializable;
-import java.util.Map;
+import java.io.*;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class inStorageCache<K extends Serializable, V extends Serializable> implements Cache<K, V>
-{
-    private final Map<K, V> map;
+import static java.lang.String.format;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class inStorageCache<K extends Serializable,
+        V extends Serializable>
+        implements Cache<K, V> {
+
+    private static final Logger logger =
+            LoggerFactory.getLogger(inStorageCache.class);
+
+    private final ConcurrentHashMap<K, String> map;
     private final int cacheMaxSize;
-    private final String pathToFile;
+    //private final String pathToFile;
+    private final String storage = "storage";
 
-    public inStorageCache(int cacheMaxSize, String pathToFile)
-    {
+    public inStorageCache(int cacheMaxSize) {
         this.cacheMaxSize = cacheMaxSize;
-        this.pathToFile = pathToFile;
-        this.map = new ConcurrentHashMap<K, V>();
+        //this.pathToFile = pathToFile;
+        this.map = new ConcurrentHashMap<K, String>();
+
+        createDir(storage);
     }
 
-    public V get(K key)
-    {
-        return map.get(key);
+    public V get(K key) {
+        if (contains(key)) {
+            File file = getFile(key);
+            FileInputStream fis = null;
+            ObjectInputStream ois = null;
+            try {
+                fis = new FileInputStream(file);
+                ois = new ObjectInputStream(fis);
+                return (V) ois.readObject();
+            } catch (Exception e) {
+                logger.error("can't read file");
+            } finally {
+                try {
+                    ois.close();
+                    fis.close();
+                } catch (IOException e) {
+                    logger.error("can't close" +
+                            "input stream");
+                }
+            }
+        }
+        return null;
     }
 
-    public int put(K key, V value)
-    {
-        map.put(key, value);
-        return 0;
+    public void put(K key, V value) {
+        ObjectOutputStream oos = null;
+        FileOutputStream fos = null;
+        try {
+            File file = createFile();
+            fos = new FileOutputStream(file);
+            oos = new ObjectOutputStream(fos);
+            oos.writeObject(value);
+            oos.flush();
+            map.put(key, file.getName());
+        } catch (IOException e) {
+            logger.error("can't create file");
+
+        } finally {
+            try {
+                oos.close();
+                fos.close();
+            } catch (IOException e) {
+                logger.error("can't close" +
+                        "output stream");
+            }
+        }
     }
 
-    public boolean contains(K key)
-    {
+    public boolean contains(K key) {
         return map.containsKey(key);
     }
 
-    public int remove(K key)
-    {
+    public void remove(K key) {
+        File file = getFile(key);
+        if (!file.delete()) {
+            logger.error("error deleting file");
+        }
         map.remove(key);
-        return 0;
     }
 
-    public int size()
-    {
+    public int size() {
         return map.size();
     }
 
-    public int clear()
-    {
-        map.clear();
-        return 0;
+    public void clear() {
+        File dir = new File(storage);
+
+        if (dir.exists()) {
+            File[] files = dir.listFiles();
+            if (files == null) {
+                return;
+            }
+            for (File file : files) {// remove cache files
+                if (file.delete()) {
+                    logger.error(format(
+                            "File '%s' has been deleted", file));
+                } else {
+                    logger.error(format(
+                            "Can't delete a file %s", file));
+                }
+            }
+            map.clear();
+        }
+    }
+
+    private int createDir(String storage) {
+        File dir = new File(storage);
+        if (!dir.exists()) {
+            if (dir.mkdir())
+                return 0;
+            else
+                return 1;
+        } else
+            return 0;
+    }
+
+    private File createFile() {
+        String randomPostfix = UUID.
+                randomUUID().
+                toString();
+
+        return new File(storage +
+                File.separator +
+                randomPostfix);
+    }
+
+    private File getFile(K key) {
+        String fileName = map.get(key);
+        return new File(storage +
+                File.separator +
+                fileName);
+    }
+
+    public boolean isFull() {
+        return size() == cacheMaxSize;
     }
 }

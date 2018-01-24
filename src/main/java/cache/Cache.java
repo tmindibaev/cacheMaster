@@ -2,19 +2,17 @@ package cache;
 
 public interface Cache<K, V> // key, value
 {
-    int put(K key, V value);
+    void put(K key, V value);
 
     boolean contains(K key);
 
     V get(K key);
 
-    int remove(K key);
+    void remove(K key);
 
-    int clear();
+    void clear();
 
     int size();
 
-    //boolean isFull();
-
-    //boolean isEmpty();
+    boolean isFull();
 }
