@@ -1,24 +1,21 @@
 package cache;
 
-import java.io.Serializable;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class cacheMaster<K extends Serializable,
-        V extends Serializable>
+public class CacheMaster<K, V >
         implements Cache<K, V> {
     private static final Logger logger =
-            LoggerFactory.getLogger(inStorageCache.class);
+            LoggerFactory.getLogger(InStorageCache.class);
 
-    private inMemoryCache<K, V> memoryCache;
-    private inStorageCache<K, V> storageCache;
+    private InMemoryCache<K, V> memoryCache;
+    private InStorageCache<K, V> storageCache;
 
-    public cacheMaster() {
-        //this.memoryCache = builder.addSizeMemoryCache(100);
-        //this.storageCache = builder.addSizeStorageCache(1000);
+    public CacheMaster(InMemoryCache<K, V> memoryCache, InStorageCache<K, V> storageCache) {
+        this.memoryCache = memoryCache;
+        this.storageCache = storageCache;
     }
-
+    @Override
     public V get(K key) {
         V value = null;
         if (memoryCache.contains(key))
@@ -27,9 +24,9 @@ public class cacheMaster<K extends Serializable,
             value = storageCache.get(key);
         return value;
     }
-
+    @Override
     public void put(K key, V value) {
-        if (!memoryCache.isFull() ||
+        if (memoryCache.size() < maxSize()||
                 memoryCache.contains(key)) {
             logger.debug(String.format(
                     "Put key %s to memory", key));
@@ -37,17 +34,17 @@ public class cacheMaster<K extends Serializable,
 
             if (storageCache.contains(key))
                 storageCache.remove(key);
-        } else if (!storageCache.isFull() ||
+        } else if (memoryCache.size() < maxSize() ||
                 storageCache.contains(key)) {
             logger.debug(String.format("Put key %s to storage", key));
             storageCache.put(key, value);
         }
     }
-
+    @Override
     public boolean contains(K key) {
         return memoryCache.contains(key) || storageCache.contains(key);
     }
-
+    @Override
     public void remove(K key) {
         if (memoryCache.contains(key))
             memoryCache.remove(key);
@@ -55,51 +52,27 @@ public class cacheMaster<K extends Serializable,
         if (storageCache.contains(key))
             storageCache.remove(key);
     }
-
+    @Override
     public int size() {
         return memoryCache.size() +
                 storageCache.size();
     }
-
+    @Override
     public void clear() {
         memoryCache.clear();
         storageCache.clear();
     }
 
-    public boolean isFull() {
-        return false;
+    @Override
+    public void putIfAbsent(K key, V value) {
+
     }
 
-    public static cacheBuilder newBuilder() {
-        return new cacheMaster().newBuilder();
+    @Override
+    public int maxSize() {
+        return 0;
     }
 }
 
-public class cacheBuilder <K extends Serializable,
-        V extends Serializable> {
-    public static cacheBuilder instance;
 
-    public static synchronized cacheBuilder getInstance() {
-        if (instance == null)
-            instance = new cacheBuilder();
-        return instance;
-    }
-    private cacheBuilder(){
 
-    }
-
-    public cacheMaster build() {
-        return cacheMaster.this;
-    }
-    public cacheBuilder addSizeMemoryCache(int memorySize) {
-        return cacheMaster.this.inMemoryCache<K, V>(memorySize);
-    }
-
-    public inStorageCache addSizeStorageCache(int storageSize) {
-        return new inStorageCache<K, V>(storageSize);
-    }
-
-    public cacheMaster build() {
-        return new cacheMaster(this);
-    }*/
-}

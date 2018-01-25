@@ -8,26 +8,23 @@ import static java.lang.String.format;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class inStorageCache<K extends Serializable,
-        V extends Serializable>
+public class InStorageCache<K, V >
         implements Cache<K, V> {
 
     private static final Logger logger =
-            LoggerFactory.getLogger(inStorageCache.class);
+            LoggerFactory.getLogger(InStorageCache.class);
 
     private final ConcurrentHashMap<K, String> map;
     private final int cacheMaxSize;
-    //private final String pathToFile;
+    private final String pathToFile;
     private final String storage = "storage";
 
-    public inStorageCache(int cacheMaxSize) {
+    public InStorageCache(int cacheMaxSize, String pathToFile) {
         this.cacheMaxSize = cacheMaxSize;
-        //this.pathToFile = pathToFile;
+        this.pathToFile = pathToFile;
         this.map = new ConcurrentHashMap<K, String>();
-
-        createDir(storage);
     }
-
+    @Override
     public V get(K key) {
         if (contains(key)) {
             File file = getFile(key);
@@ -51,7 +48,7 @@ public class inStorageCache<K extends Serializable,
         }
         return null;
     }
-
+    @Override
     public void put(K key, V value) {
         ObjectOutputStream oos = null;
         FileOutputStream fos = null;
@@ -76,10 +73,15 @@ public class inStorageCache<K extends Serializable,
         }
     }
 
+    @Override
+    public void putIfAbsent(K key, V value) {
+
+    }
+    @Override
     public boolean contains(K key) {
         return map.containsKey(key);
     }
-
+    @Override
     public void remove(K key) {
         File file = getFile(key);
         if (!file.delete()) {
@@ -87,11 +89,11 @@ public class inStorageCache<K extends Serializable,
         }
         map.remove(key);
     }
-
+    @Override
     public int size() {
         return map.size();
     }
-
+    @Override
     public void clear() {
         File dir = new File(storage);
 
@@ -140,8 +142,8 @@ public class inStorageCache<K extends Serializable,
                 File.separator +
                 fileName);
     }
-
-    public boolean isFull() {
-        return size() == cacheMaxSize;
+    @Override
+    public int maxSize(){
+        return cacheMaxSize;
     }
 }

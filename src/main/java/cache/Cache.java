@@ -4,6 +4,8 @@ public interface Cache<K, V> // key, value
 {
     void put(K key, V value);
 
+    void putIfAbsent(K key, V value);
+
     boolean contains(K key);
 
     V get(K key);
@@ -14,5 +16,6 @@ public interface Cache<K, V> // key, value
 
     int size();
 
-    boolean isFull();
+    int maxSize();
+
 }
