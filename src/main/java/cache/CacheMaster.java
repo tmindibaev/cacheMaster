@@ -11,15 +11,13 @@ public class cacheMaster<K extends Serializable,
     private static final Logger logger =
             LoggerFactory.getLogger(inStorageCache.class);
 
-    private final inMemoryCache<K, V> memoryCache;
-    private final inStorageCache<K, V> storageCache;
+    private inMemoryCache<K, V> memoryCache;
+    private inStorageCache<K, V> storageCache;
 
-    public cacheMaster(int memorySize,
-                       int storageSize) {
-        this.memoryCache = new inMemoryCache<K, V>(memorySize);
-        this.storageCache = new inStorageCache<K, V>(storageSize);
+    public cacheMaster() {
+        //this.memoryCache = builder.addSizeMemoryCache(100);
+        //this.storageCache = builder.addSizeStorageCache(1000);
     }
-
 
     public V get(K key) {
         V value = null;
@@ -71,4 +69,37 @@ public class cacheMaster<K extends Serializable,
     public boolean isFull() {
         return false;
     }
+
+    public static cacheBuilder newBuilder() {
+        return new cacheMaster().newBuilder();
+    }
+}
+
+public class cacheBuilder <K extends Serializable,
+        V extends Serializable> {
+    public static cacheBuilder instance;
+
+    public static synchronized cacheBuilder getInstance() {
+        if (instance == null)
+            instance = new cacheBuilder();
+        return instance;
+    }
+    private cacheBuilder(){
+
+    }
+
+    public cacheMaster build() {
+        return cacheMaster.this;
+    }
+    public cacheBuilder addSizeMemoryCache(int memorySize) {
+        return cacheMaster.this.inMemoryCache<K, V>(memorySize);
+    }
+
+    public inStorageCache addSizeStorageCache(int storageSize) {
+        return new inStorageCache<K, V>(storageSize);
+    }
+
+    public cacheMaster build() {
+        return new cacheMaster(this);
+    }*/
 }
