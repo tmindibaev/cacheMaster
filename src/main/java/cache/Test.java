@@ -1,8 +1,12 @@
 package cache;
 
-public class Test {
-    public static void main(String[] args) {
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+public class Test {
+    private static final Logger logger =
+            LoggerFactory.getLogger(InStorageCache.class);
+    public static void main(String[] args) {
         Cache<String, String> cache = new CacheBuilder()
                 .setMaxInMemorySize(10)
                 .setMaxInStorageSize(100)
@@ -10,11 +14,13 @@ public class Test {
                 .build();
 
         cache.put("1", "a");
-        cache.put("2", "b");
-        cache.put("2", "b");
+        System.out.println(cache.get("1"));
+        cache.putIfAbsent("1","b");
+        System.out.println(cache.get("1"));
+        cache.putIfAbsent("1","c");
+        System.out.println(cache.get("1"));
 
-        cache.get("3");
-        cache.get("2");
-        cache.get("1");
+        cache.putIfAbsent("2","c");
+        System.out.println(cache.get("2"));
     }
 }

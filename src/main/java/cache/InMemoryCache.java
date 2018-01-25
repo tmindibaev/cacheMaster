@@ -32,7 +32,9 @@ public class InMemoryCache<K, V>
 
     @Override
     public void putIfAbsent(K key, V value) {
-
+        if (!contains(key)) {
+            put(key, value);
+        }
     }
 
     @Override
@@ -44,14 +46,17 @@ public class InMemoryCache<K, V>
     public void remove(K key) {
         map.remove(key);
     }
+
     @Override
     public int size() {
         return map.size();
     }
+
     @Override
-    public int maxSize(){
+    public int maxSize() {
         return cacheMaxSize;
     }
+
     @Override
     public void clear() {
         map.clear();

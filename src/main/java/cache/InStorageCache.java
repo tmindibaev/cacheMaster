@@ -75,7 +75,9 @@ public class InStorageCache<K, V >
 
     @Override
     public void putIfAbsent(K key, V value) {
-
+        if (!map.contains(key)) {
+            put(key, value);
+        }
     }
     @Override
     public boolean contains(K key) {
